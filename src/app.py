@@ -5,22 +5,15 @@ from PIL import Image
 from io import BytesIO
 from IPython.display import display
 
-# --- IMPORTANT ---
-# Paste your API key here. For better security, we recommend using environment variables.
-# For example: API_KEY=os.environ.get("GEMINI_API_KEY")
 API_KEY = os.environ.get("GEMINI_API_KEY")
 # -----------------
 
-# Configure the client with your API key
 client = genai.Client(api_key=API_KEY)
 
-# The text prompt for image generation
 import re
 import glob
 
-# ... (imports remain) ...
-# The text prompt for image generation
-prompt = "Create a dress design based on these images. I want something like the black twirl dress."
+prompt = "Create a dress for a twirling character from the movie Brazil."
 
 def select_best_images(prompt, image_dir='images'):
     """Selects top 2 images matching prompt words via regex."""
@@ -60,7 +53,6 @@ else:
 print("Generating image...")
 
 # Call the API to generate the image
-# We pass the prompt and the list of images
 response = client.models.generate_content(
     model="gemini-2.5-flash-image-preview",
     contents=[prompt, *images],

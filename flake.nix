@@ -16,8 +16,10 @@
           pkgs = nixpkgs.legacyPackages.${system};
           pythonEnv = pkgs.python3.withPackages (p: [
             p.ipython
-	          p.google-genai
+	    p.google-genai
 	    p.pillow
+            p.notebook
+            p.ipykernel
           ]);
 
           dstm = pkgs.stdenv.mkDerivation {
@@ -80,7 +82,7 @@
             packages = [
               allConfigs.${system}.pythonEnv
               allConfigs.${system}.pkgs.uv
-              # allConfigs.${system}.pkgs.nodejs_22
+              allConfigs.${system}.pkgs.nodejs_22
             ];
             shellHook = ''
               unset PYTHONPATH

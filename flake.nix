@@ -14,49 +14,18 @@
       systemConfigurations = system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          pythonEnv = pkgs.python3.withPackages (p: [
-            p.ipython
-	    p.google-genai
-	    p.pillow
-            p.notebook
-            p.ipykernel
-          ]);
 
-          dstm = pkgs.stdenv.mkDerivation {
-            pname = "dstm-image-jen";
+          dstm = pkgs.buildNpmPackage {
+            pname = "dstm";
             version = "0.1.0";
             src = ./.;
-            buildInputs = with pkgs; [
-              pythonEnv
-              uv
-            ];
-
-            installPhase = ''
-              mkdir -p $out/bin
-
-              APP_ROOT_PATH="$out"
-              # Pre-create destination directories to guarantee they exist
-              mkdir -p $out/src
-
-              # This pattern ($src/dir/., $out/dir/) is the most robust copy method.
-              cp -r $src/src/. $out/src/
-              # ------------------------------------------
-              # ls -la $src
-              # echo "_________________"
-              # ls -la $out
-              # create a startup script
-              cat > $out/bin/start-server << EOF
-              #!${pkgs.stdenv.shell}
-              if [ -z "$MODEL_PATH" ]; then
-                echo "Error: MODEL_PATH environment variable is not set."
-                echo "Please set it to the path of the model file."
-                exit 1
-              fi
-
-            '';
+            
+            npmDeps = pkgs.importNpmLock { npmRoot = ./backend; };
+            npmConfigHook = pkgs.importNpmLock.npmConfigHook;
           };
+
           dockerImage = pkgs.dockerTools.buildLayeredImage {
-            name = "dstm-image-jen";
+            name = "dstm_docker";
             tag = "latest";
 
             contents = [ pkgs.glibc pkgs.bash pkgs.coreutils ];
@@ -71,7 +40,7 @@
           };
         in
         {
-          inherit pkgs dstm dockerImage pythonEnv;
+          inherit pkgs dstm dockerImage;
         };
       allConfigs = forAllSystems systemConfigurations;
 
@@ -80,15 +49,10 @@
         devShells = forAllSystems (system: {
           default = allConfigs.${system}.pkgs.mkShell {
             packages = [
-              allConfigs.${system}.pythonEnv
-              allConfigs.${system}.pkgs.uv
               allConfigs.${system}.pkgs.nodejs_22
+              allConfigs.${system}.dstm
             ];
             shellHook = ''
-              unset PYTHONPATH
-              uv sync --upgrade
-              . .venv/bin/activate
-              uv pip install -r requirements.txt --quiet
               GEMINI_API_KEY=$(cat key.txt)
               export GEMINI_API_KEY
               alias npm='nix run .#npm --'

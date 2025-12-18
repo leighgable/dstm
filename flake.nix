@@ -18,7 +18,7 @@
           dstm = pkgs.buildNpmPackage {
             pname = "dstm";
             version = "0.1.0";
-            src = ./.;
+            src = ./backend;
             
             npmDeps = pkgs.importNpmLock { npmRoot = ./backend; };
             npmConfigHook = pkgs.importNpmLock.npmConfigHook;

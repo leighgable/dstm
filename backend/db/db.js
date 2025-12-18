@@ -1,47 +1,51 @@
+// Explicitly load environment variables from .env file in the backend directory
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, './.env') });
+
 const mariadb = require('mariadb');
 
-// Create a connection pool using environment variables
+// Create a connection pool using environment variables.
+// The server will use these details to connect to your database.
 const pool = mariadb.createPool({
-    host: process.env.DB_HOST, 
+    host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    connectionLimit: 10
+    connectionLimit: 5
 });
 
-module.exports = pool;
+/**
+ * Creates the 'usage_tracking' table if it doesn't already exist.
+ * This function is called when the server starts.
+ */
+async function initializeDatabase() {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        console.log("Connected to the database.");
 
+        const query = `
+            CREATE TABLE IF NOT EXISTS usage_tracking (
+                session_id VARCHAR(255) PRIMARY KEY,
+                generations_count INT DEFAULT 0,
+                last_reset_date DATE
+            );
+        `;
 
-const mariadb = require('mariadb/callback');
+        await conn.query(query);
+        console.log("Database initialized: 'usage_tracking' table is ready.");
 
-// Certificate Authority (CA)",
-var serverCert = [fs.readFileSync(process.env.SKYSQL_CA_PEM, "utf8")];
-
-// Declare async function
-function main() {
-   let conn;
-
-   try {
-      conn = mariadb.createConnection({
-         host: "example.skysql.com",
-         port: 5009,
-         ssl: { ca: serverCert },
-         user: "db_user",
-         password: "db_user_password",
-         database: "test",
-      });
-
-      // Use Connection
-      // ...
-   } catch (err) {
-      // Manage Errors
-      console.log("SQL error in establishing a connection: ", err);
-   } finally {
-      // Close Connection
-      if (conn) conn.end(err => {if(err){
-         console.log("SQL error in closing a connection: ", err);}
-      });
-   }
+    } catch (err) {
+        console.error("Error initializing database:", err);
+        // If the app can't connect to the DB, it should probably exit.
+        process.exit(1);
+    } finally {
+        // Ensure the connection is always released back to the pool
+        if (conn) {
+            conn.release();
+            console.log("Database connection released.");
+        }
+    }
 }
 
-main();
+module.exports = { pool, initializeDatabase };

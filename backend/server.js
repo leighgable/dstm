@@ -5,6 +5,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+const { initializeDatabase } = require('./db/db');
+
 // Assuming you will have a usage tracker and api routes
 // const trackUsage = require('./db/usageTracker'); 
 // const apiRoutes = require('./routes/api');
@@ -68,6 +70,18 @@ app.get('*', (req, res) => {
 
 // === SERVER START === //
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+const startServer = async () => {
+    await initializeDatabase();
+
+    // Start listening only if not in a test environment
+    if (process.env.NODE_ENV !== 'test') {
+        app.listen(PORT, () => {
+            console.log(`Server is running on http://localhost:${PORT}`);
+        });
+    }
+};
+
+startServer();
+
+// Export the app for testing purposes
+module.exports = app;

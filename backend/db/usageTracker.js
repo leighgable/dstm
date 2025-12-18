@@ -1,5 +1,5 @@
 const pool = require('./db');
-const MAX_GENERATIONS_PER_DAY = 5; // Your chosen limit
+const MAX_GENERATIONS_PER_DAY = 1; // Your chosen limit
 
 // Helper function to check if the user is over the daily limit
 async function checkUsage(sessionId) {
@@ -65,7 +65,7 @@ async function recordUsage(sessionId) {
 
 module.exports = { checkUsage, recordUsage };
 
-/* * NOTE: You must create the 'usage_tracking' table in your MariaDB instance:
+/* * NOTE: must create the 'usage_tracking' table in your MariaDB instance:
  * * CREATE TABLE usage_tracking (
  * session_id VARCHAR(255) PRIMARY KEY,
  * generations_count INT DEFAULT 0,
